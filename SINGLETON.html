@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Singleton Pattern Demo</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4">
+
+    <div class="bg-white rounded-xl shadow-2xl p-8 max-w-2xl w-full space-y-8">
+        <header class="text-center">
+            <h1 class="text-4xl font-extrabold text-gray-800 tracking-tight">Singleton Pattern Demo</h1>
+            <p class="mt-2 text-lg text-gray-600">E-commerce Shopping Cart Manager</p>
+        </header>
+
+        <section class="space-y-6">
+            <div class="bg-purple-50 p-6 rounded-lg border border-purple-200">
+                <h2 class="text-2xl font-bold text-purple-700">Demonstrating the Singleton</h2>
+                <p class="mt-2 text-gray-700">
+                    This example shows that a single <code>ShoppingCart</code> instance is used throughout the application,
+                    ensuring data consistency.
+                </p>
+                <div class="mt-4 flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4">
+                    <button id="addItemBtn" class="w-full sm:w-auto px-6 py-3 bg-indigo-600 text-white font-semibold rounded-full shadow-md hover:bg-indigo-700 transition-colors">
+                        Add Random Item to Cart
+                    </button>
+                    <button id="checkInstancesBtn" class="w-full sm:w-auto px-6 py-3 bg-emerald-600 text-white font-semibold rounded-full shadow-md hover:bg-emerald-700 transition-colors">
+                        Check Instances
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                <h2 class="text-2xl font-bold text-gray-700">Shopping Cart Status</h2>
+                <div class="mt-4">
+                    <p class="text-gray-600 font-semibold">User Session ID:</p>
+                    <code id="userIdDisplay" class="text-gray-900 text-sm bg-gray-200 p-2 rounded-md block mt-2 break-all"></code>
+                </div>
+                <div class="mt-4">
+                    <p class="text-gray-600 font-semibold">Current Items in Cart (<span id="itemCount">0</span>):</p>
+                    <ul id="cartItemsList" class="mt-2 text-gray-800 list-disc list-inside space-y-1">
+                        <!-- Items will be displayed here -->
+                    </ul>
+                </div>
+            </div>
+
+            <div id="instanceCheckResult" class="bg-gray-50 p-6 rounded-lg border border-gray-200 hidden">
+                <h2 class="text-2xl font-bold text-gray-700">Instance Check Result</h2>
+                <div id="resultText" class="mt-4 font-mono text-center text-lg"></div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // Singleton Class Definition
+        class ShoppingCart {
+            // Private static instance variable to hold the single instance.
+            static #instance;
+
+            // Private constructor to prevent direct instantiation.
+            constructor(userId) {
+                // Ensure the constructor is only called once.
+                if (ShoppingCart.#instance) {
+                    throw new Error("You can only create one instance of ShoppingCart. Use getInstance() instead.");
+                }
+                this.userId = userId;
+                this.items = [];
+            }
+
+            // Public static method to get the single instance.
+            static getInstance(userId) {
+                // If the instance doesn't exist, create it.
+                if (!ShoppingCart.#instance) {
+                    ShoppingCart.#instance = new ShoppingCart(userId);
+                }
+                // Return the existing instance.
+                return ShoppingCart.#instance;
+            }
+
+            // Method to add an item to the cart.
+            addItem(item) {
+                this.items.push(item);
+            }
+
+            // Method to get all items from the cart.
+            getItems() {
+                return this.items;
+            }
+        }
+
+        // DOM elements
+        const addItemBtn = document.getElementById('addItemBtn');
+        const checkInstancesBtn = document.getElementById('checkInstancesBtn');
+        const userIdDisplay = document.getElementById('userIdDisplay');
+        const cartItemsList = document.getElementById('cartItemsList');
+        const itemCountSpan = document.getElementById('itemCount');
+        const instanceCheckResultDiv = document.getElementById('instanceCheckResult');
+        const resultText = document.getElementById('resultText');
+
+        // Global variable for the single user session.
+        const userSessionId = 'user-session-' + Math.random().toString(36).substr(2, 9);
+        userIdDisplay.textContent = userSessionId;
+
+        // Function to update the cart display on the page.
+        function updateCartDisplay() {
+            const cart = ShoppingCart.getInstance(userSessionId);
+            const items = cart.getItems();
+            cartItemsList.innerHTML = '';
+            itemCountSpan.textContent = items.length;
+            if (items.length === 0) {
+                cartItemsList.innerHTML = '<li class="text-gray-500 italic">Your cart is empty.</li>';
+            } else {
+                items.forEach(item => {
+                    const li = document.createElement('li');
+                    li.textContent = `${item.name} (ID: ${item.id})`;
+                    cartItemsList.appendChild(li);
+                });
+            }
+        }
+
+        // Event listener to add a random item.
+        addItemBtn.addEventListener('click', () => {
+            const cart = ShoppingCart.getInstance(userSessionId);
+            const randomItem = {
+                id: crypto.randomUUID(),
+                name: `Product ${cart.getItems().length + 1}`
+            };
+            cart.addItem(randomItem);
+            updateCartDisplay();
+        });
+
+        // Event listener to check if the instances are the same.
+        checkInstancesBtn.addEventListener('click', () => {
+            // Call getInstance() multiple times.
+            const cart1 = ShoppingCart.getInstance(userSessionId);
+            const cart2 = ShoppingCart.getInstance(userSessionId);
+            const cart3 = ShoppingCart.getInstance(userSessionId);
+
+            // Compare the instances.
+            const areInstancesEqual = (cart1 === cart2) && (cart2 === cart3);
+            
+            instanceCheckResultDiv.classList.remove('hidden');
+            if (areInstancesEqual) {
+                resultText.textContent = "All instances are strictly equal! (cart1 === cart2 === cart3)";
+                resultText.classList.remove('text-red-600');
+                resultText.classList.add('text-green-600');
+            } else {
+                resultText.textContent = "Instances are NOT equal. The Singleton pattern has failed.";
+                resultText.classList.remove('text-green-600');
+                resultText.classList.add('text-red-600');
+            }
+        });
+
+        // Initialize the display on page load.
+        window.onload = () => {
+            updateCartDisplay();
+        };
+
+    </script>
+</body>
+</html>
